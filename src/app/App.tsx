@@ -10,6 +10,7 @@ import { HomePage } from './pages/HomePage';
 import { ExportPage } from './pages/ExportPage';
 import { LogsPage } from './pages/LogsPage';
 import { UsersPage } from './pages/UsersPage';
+import { MetricsPage } from './pages/MetricsPage';
 
 /**
  * ГЛАВНОЕ ПРИЛОЖЕНИЕ СИСТЕМЫ ОНЛАЙН-МОНИТОРИНГА
@@ -23,6 +24,7 @@ import { UsersPage } from './pages/UsersPage';
  * - /export (Экспорт) - Страница экспорта данных в Excel
  * - /logs (Логи) - Системные логи и события
  * - /users (Пользователи) - Управление пользователями (только для администраторов)
+ * - /metrics (Метрики) - Дополнительные метрики и аналитика
  * 
  * Технологии:
  * - React + TypeScript
@@ -72,6 +74,16 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <LogsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/metrics"
+          element={
+            <ProtectedRoute>
+              <AdminRoute>
+                <MetricsPage />
+              </AdminRoute>
             </ProtectedRoute>
           }
         />
