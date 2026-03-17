@@ -128,8 +128,11 @@ files.forEach(file => {
 
 // Проверка базы данных
 console.log('\n🗄️  База данных:');
-if (fs.existsSync('data/monitoring.db')) {
-  console.log('   ✅ База данных создана');
+if (fs.existsSync('data/monitoring.json')) {
+  console.log('   ✅ JSON база данных создана');
+  console.log('   💡 Для пересоздания: npm run migrate reset');
+} else if (fs.existsSync('data/monitoring.db')) {
+  console.log('   ✅ SQLite база данных создана');
   console.log('   💡 Для пересоздания: npm run migrate reset');
 } else {
   console.log('   ⚠️  База данных не создана');

@@ -2,44 +2,35 @@
 
 Backend API для системы онлайн-мониторинга инженерных параметров из InfluxDB.
 
+⚠️ **WINDOWS ПОЛЬЗОВАТЕЛИ:** Читайте `README_WINDOWS.md` для быстрого старта!
+
 ## 🚀 Быстрый старт
 
-### 1. Установка зависимостей
+### Для Windows (JSON база):
 
 ```bash
 cd backend
 npm install
-```
-
-### 2. Настройка окружения
-
-Создайте файл `.env` на основе `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-Заполните переменные окружения:
-- `INFLUX_URL` - URL вашего InfluxDB сервера
-- `INFLUX_TOKEN` - токен доступа к InfluxDB
-- `INFLUX_ORG` - имя организации в InfluxDB
-- `JWT_SECRET` - секретный ключ для JWT токенов (измените!)
-
-### 3. Инициализация базы данных
-
-```bash
+copy .env.example .env
+# Заполните .env
 npm run migrate
-```
-
-Это создаст SQLite базу данных и добавит начальные данные:
-- Администратор: `admin` / `admin123`
-- Тестовые станции и метрики
-
-### 4. Запуск в режиме разработки
-
-```bash
 npm run dev
 ```
+
+📚 **Подробнее:** `QUICK_START_JSON.md`
+
+### Для Linux/Mac (SQLite):
+
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Заполните .env
+npm run migrate
+npm run dev
+```
+
+📚 **Подробнее:** `SETUP.md`
 
 Сервер запустится на `http://localhost:3001`
 
@@ -148,7 +139,7 @@ backend/
 
 ## 📊 InfluxDB
 
-Структура данных в InfluxDB:
+Структура д��нных в InfluxDB:
 
 - **Bucket:** telemetry
 - **Measurement:** lab, ceh1, и т.д. (настраивается через станции)
