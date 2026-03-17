@@ -232,20 +232,20 @@ export function HomePage() {
           <MonitoringChart
             data={chartData}
             visibleMetrics={visibleMetricNames}
-            metrics={metrics}
-            selectedMetricIds={selectedMetricIds}
+            metrics={availableMetrics}
+            timeRange={timeInterval}
           />
 
           {/* Таблица */}
           <DataTable
             data={chartData}
             visibleMetrics={visibleMetricNames}
-            metrics={metrics}
-            selectedMetricIds={selectedMetricIds}
+            metrics={availableMetrics}
             showMin={showMin}
             showMax={showMax}
             currentValues={currentValues}
             onExport={handleExport}
+            timeRange={timeInterval}
           />
         </div>
 
