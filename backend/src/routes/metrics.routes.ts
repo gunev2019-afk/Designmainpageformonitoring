@@ -4,7 +4,7 @@
 
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authenticateToken } from '../middleware/auth.middleware';
 import { findAll, findById, findWhere, insert, update, remove } from '../config/database';
 import { CreateMetricDTO, UpdateMetricDTO, Metric } from '../types/models';
 
@@ -15,7 +15,7 @@ const router = Router();
  * Query параметры:
  * - stationId: фильтр по станции
  */
-router.get('/', authMiddleware, async (req: Request, res: Response) => {
+router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const { stationId } = req.query;
     
@@ -50,7 +50,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 /**
  * GET /api/metrics/:id - Получить метрику по ID
  */
-router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
     
@@ -88,7 +88,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
  */
 router.post(
   '/',
-  authMiddleware,
+  authenticateToken,
   [
     body('station_id').isInt().withMessage('ID станции должен быть числом'),
     body('display_name').notEmpty().withMessage('Название метрики обязательно'),
@@ -160,7 +160,7 @@ router.post(
  */
 router.put(
   '/:id',
-  authMiddleware,
+  authenticateToken,
   async (req: Request, res: Response) => {
     try {
       // Проверка прав доступа
@@ -222,7 +222,7 @@ router.put(
 /**
  * DELETE /api/metrics/:id - Удалить метрику (только для админа)
  */
-router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     // Проверка прав доступа
     if (req.user?.role !== 'admin') {

@@ -3,7 +3,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authenticateToken } from '../middleware/auth.middleware';
 import { findById, findWhere } from '../config/database';
 import { Station, Metric, TimeRange, DataFrequency } from '../types/models';
 import { queryInfluxData, queryCurrentValues, InfluxQueryParams } from '../services/influxdb.service';
@@ -13,7 +13,7 @@ const router = Router();
 /**
  * GET /api/data/current/:stationId - Получить текущие значения метрик
  */
-router.get('/current/:stationId', authMiddleware, async (req: Request, res: Response) => {
+router.get('/current/:stationId', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const stationId = parseInt(req.params.stationId, 10);
     
@@ -101,7 +101,7 @@ router.get('/current/:stationId', authMiddleware, async (req: Request, res: Resp
  *   frequency: DataFrequency
  * }
  */
-router.post('/history', authMiddleware, async (req: Request, res: Response) => {
+router.post('/history', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { stationId, metricIds, timeRange, frequency } = req.body;
     
@@ -204,7 +204,7 @@ router.post('/history', authMiddleware, async (req: Request, res: Response) => {
     console.error('Ошибка при получении исторических данных:', error);
     res.status(500).json({
       success: false,
-      error: 'Ошибка сервера при получении данных',
+      error: 'Ошибка ��ервера при получении данных',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
@@ -213,7 +213,7 @@ router.post('/history', authMiddleware, async (req: Request, res: Response) => {
 /**
  * GET /api/data/health - Проверить подключение к InfluxDB
  */
-router.get('/health', authMiddleware, async (req: Request, res: Response) => {
+router.get('/health', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { testInfluxConnection } = await import('../services/influxdb.service');
     const isHealthy = await testInfluxConnection();

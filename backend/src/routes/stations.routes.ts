@@ -4,7 +4,7 @@
 
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authenticateToken } from '../middleware/auth.middleware';
 import { findAll, findById, insert, update, remove } from '../config/database';
 import { CreateStationDTO, UpdateStationDTO, Station } from '../types/models';
 
@@ -13,7 +13,7 @@ const router = Router();
 /**
  * GET /api/stations - Получить все станции
  */
-router.get('/', authMiddleware, async (req: Request, res: Response) => {
+router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const stations = findAll('stations') as Station[];
     
@@ -33,7 +33,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 /**
  * GET /api/stations/:id - Получить станцию по ID
  */
-router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const id = parseInt(req.params.id, 10);
     
@@ -71,7 +71,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
  */
 router.post(
   '/',
-  authMiddleware,
+  authenticateToken,
   [
     body('display_name').notEmpty().withMessage('Название станции обязательно'),
     body('bucket').notEmpty().withMessage('Bucket обязателен'),
@@ -127,7 +127,7 @@ router.post(
  */
 router.put(
   '/:id',
-  authMiddleware,
+  authenticateToken,
   async (req: Request, res: Response) => {
     try {
       // Проверка прав доступа
@@ -178,7 +178,7 @@ router.put(
 /**
  * DELETE /api/stations/:id - Удалить станцию (только для админа)
  */
-router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     // Проверка прав доступа
     if (req.user?.role !== 'admin') {
