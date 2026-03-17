@@ -178,16 +178,15 @@ export async function queryCurrentValues(
 export async function testInfluxConnection(): Promise<boolean> {
   try {
     const client = getInfluxClient();
-    const healthApi = client.getHealthApi();
-    const health = await healthApi.getHealth();
+    const queryApi = client.getQueryApi(config.influxdb.org);
     
-    if (health.status === 'pass') {
-      console.log('✅ Подключение к InfluxDB успешно');
-      return true;
-    } else {
-      console.error('⚠️  InfluxDB вернул статус:', health.status);
-      return false;
-    }
+    // Простой запрос для проверки подключения
+    const query = `buckets() |> limit(n:1)`;
+    
+    await queryApi.collectRows(query);
+    
+    console.log('✅ Подключение к InfluxDB успешно');
+    return true;
   } catch (error) {
     console.error('❌ Ошибка подключения к InfluxDB:', error);
     return false;
