@@ -102,16 +102,22 @@ export function HomePage() {
     try {
       if (!silent) setRefreshing(true);
 
+      console.log('🏠 ========== loadData START ==========');
+      console.log('🏠 selectedStation:', selectedStation);
+      console.log('🏠 selectedMetricIds:', selectedMetricIds);
+
       // Загружаем текущие значения
       const currentResponse = await getCurrentValues(selectedStation.id);
       if (currentResponse.success && currentResponse.data) {
-        console.log('📊 Текущие значения:', currentResponse.data);
+        console.log('📊 Текущие значения получены:', currentResponse.data.length, 'записей');
+        console.log('📊 Первое текущее значение:', currentResponse.data[0]);
         setCurrentValues(currentResponse.data);
       }
 
       // Загружаем исторические данные
       if (selectedMetricIds.length > 0) {
-        console.log('📥 Запрос данных:', {
+        console.log('📥 ========== ЗАПРОС ИСТОРИЧЕСКИХ ДАННЫХ ==========');
+        console.log('📥 Параметры:', {
           stationId: selectedStation.id,
           metricIds: selectedMetricIds,
           timeRange: timeInterval,
@@ -125,16 +131,40 @@ export function HomePage() {
           frequency: dataFrequency,
         });
 
-        console.log('📈 Получены данные:', historyResponse);
+        console.log('📈 ========== ОТВЕТ С ИСТОРИЧЕСКИМИ ДАННЫМИ ==========');
+        console.log('📈 Полный ответ:', historyResponse);
         
         if (historyResponse.success && historyResponse.data) {
           console.log('✅ Данных получено:', historyResponse.data.length, 'записей');
           console.log('🔍 Первая запись:', historyResponse.data[0]);
+          console.log('🔍 Вторая запись:', historyResponse.data[1]);
+          console.log('🔍 Последняя запись:', historyResponse.data[historyResponse.data.length - 1]);
+          
+          // Проверяем наличие metric_X полей
+          if (historyResponse.data.length > 0) {
+            const firstRecord = historyResponse.data[0];
+            const metricKeys = Object.keys(firstRecord).filter(k => k.startsWith('metric_'));
+            console.log('🔑 Найдены ключи метрик:', metricKeys);
+            
+            metricKeys.forEach(key => {
+              console.log(`  - ${key}: ${firstRecord[key]}`);
+            });
+            
+            if (metricKeys.length === 0) {
+              console.error('❌ КРИТИЧНО: В данных НЕТ полей metric_X!');
+              console.error('❌ Проверьте backend: /api/history должен возвращать metric_1, metric_2, и т.д.');
+            }
+          }
+          
           setChartData(historyResponse.data);
         } else {
-          console.error('❌ Нет данных или ошибка:', historyResponse);
+          console.error('❌ Нет данны�� или ошибка:', historyResponse);
         }
+      } else {
+        console.warn('⚠️ selectedMetricIds пуст, исторические данные не загружаются');
       }
+      
+      console.log('🏠 ========== loadData END ==========');
     } catch (error: any) {
       console.error('❌ Ошибка загрузки данных:', error);
       if (!silent) {

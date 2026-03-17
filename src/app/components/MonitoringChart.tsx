@@ -32,15 +32,39 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function MonitoringChart({ data, visibleMetrics, metrics, timeRange }: MonitoringChartProps) {
-  // Группируем метрики по типу (температура/влажность)
-  const visibleMetricObjects = metrics.filter(m => visibleMetrics.includes(m.display_name));
-  
-  console.log('📊 MonitoringChart render:', {
+  console.log('📊 ========== MonitoringChart START ==========');
+  console.log('📊 Входные параметры:', {
     dataLength: data.length,
     visibleMetrics,
     metricsCount: metrics.length,
-    visibleMetricObjects: visibleMetricObjects.length,
-    firstDataPoint: data[0]
+    timeRange
+  });
+  
+  // Группируем метрики по типу (температура/влажность)
+  const visibleMetricObjects = metrics.filter(m => visibleMetrics.includes(m.display_name));
+  
+  console.log('📊 Фильтрация метрик:');
+  console.log('  - Всего метрик в базе:', metrics.length);
+  console.log('  - Видимые имена метрик:', visibleMetrics);
+  console.log('  - Отфильтровано объектов метрик:', visibleMetricObjects.length);
+  
+  if (visibleMetricObjects.length > 0) {
+    console.log('  - Детали видимых метрик:', visibleMetricObjects.map(m => ({
+      id: m.id,
+      display_name: m.display_name,
+      field: m.field,
+      unit: m.unit,
+      channel: m.channel
+    })));
+  } else {
+    console.warn('⚠️ НЕТ ВИДИМЫХ МЕТРИК! Проверьте:');
+    console.warn('  - metrics:', metrics.map(m => m.display_name));
+    console.warn('  - visibleMetrics:', visibleMetrics);
+  }
+  
+  console.log('📊 Сырые данные (первые 3 записи):');
+  data.slice(0, 3).forEach((item, idx) => {
+    console.log(`  [${idx}]:`, item);
   });
   
   const temperatureMetrics = visibleMetricObjects.filter(m => 
@@ -51,8 +75,9 @@ export function MonitoringChart({ data, visibleMetrics, metrics, timeRange }: Mo
     m.unit === '%' || m.field.toLowerCase().includes('влажн') || m.field.toLowerCase().includes('humid')
   );
   
-  console.log('🌡️ Температурных метрик:', temperatureMetrics.length);
-  console.log('💧 Влажностных метрик:', humidityMetrics.length);
+  console.log('📊 Разделение по типам:');
+  console.log('  🌡️ Температурных метрик:', temperatureMetrics.length, temperatureMetrics.map(m => m.display_name));
+  console.log('  💧 Влажностных метрик:', humidityMetrics.length, humidityMetrics.map(m => m.display_name));
   
   // Цвета для графиков
   const colors = [
@@ -67,7 +92,7 @@ export function MonitoringChart({ data, visibleMetrics, metrics, timeRange }: Mo
   ];
 
   // Форматируем данные для отображения
-  const formattedData = data.map(item => {
+  const formattedData = data.map((item, idx) => {
     const formatted: any = {
       time: item.timestamp || item.time,
       rawTime: item.timestamp || item.time,
@@ -79,9 +104,16 @@ export function MonitoringChart({ data, visibleMetrics, metrics, timeRange }: Mo
       formatted[key] = item[key] !== undefined ? item[key] : null;
     });
     
+    if (idx < 3) {
+      console.log(`  📊 Форматированная запись [${idx}]:`, formatted);
+    }
+    
     return formatted;
   });
-
+  
+  console.log('📊 Итого форматированных записей:', formattedData.length);
+  console.log('📊 ========== MonitoringChart END ==========');
+  
   return (
     <div className="space-y-6">
       {/* График температуры */}
