@@ -6,6 +6,7 @@
 ```
 error TS2305: Module '"../middleware/auth.middleware"' has no exported member 'authMiddleware'.
 error TS7030: Not all code paths return a value.
+error TS2322: Type 'Response<any, Record<string, any>>' is not assignable to type 'void'.
 ```
 
 ### Решение:
@@ -16,9 +17,15 @@ error TS7030: Not all code paths return a value.
    - `/backend/src/routes/metrics.routes.ts`
    - `/backend/src/routes/data.routes.ts`
 
-2. Добавил явные типы возврата `Promise<void>` для всех async route handlers
+2. Убрал явные типы возврата `Promise<void>` из всех route handlers
 
-3. Добавил `return` перед всеми ранними выходами из функций
+3. Заменил паттерн `return res.status()` на:
+   ```typescript
+   res.status(400).json({...});
+   return;
+   ```
+
+4. Все ранние выходы теперь используют корректный паттерн без конфликта типов
 
 ---
 
@@ -162,7 +169,7 @@ backend/
 
 ### Проверка backend:
 ```bash
-# Список всех станций (нужен токен)
+# Списо�� всех станций (нужен токен)
 curl -H "Authorization: Bearer <TOKEN>" http://localhost:3001/api/stations
 
 # Health check

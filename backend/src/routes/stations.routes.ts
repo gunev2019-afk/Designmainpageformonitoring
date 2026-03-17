@@ -13,7 +13,7 @@ const router = Router();
 /**
  * GET /api/stations - Получить все станции
  */
-router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const stations = findAll('stations') as Station[];
     
@@ -33,24 +33,26 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
 /**
  * GET /api/stations/:id - Получить станцию по ID
  */
-router.get('/:id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
     
     if (isNaN(id)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Неверный ID станции',
       });
+      return;
     }
     
     const station = findById('stations', id) as Station | null;
     
     if (!station) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Станция не найдена',
       });
+      return;
     }
     
     res.json({
@@ -81,20 +83,22 @@ router.post(
     try {
       // Проверка прав доступа
       if (req.user?.role !== 'admin') {
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           error: 'Доступ запрещен. Требуются права администратора.',
         });
+        return;
       }
       
       // Валидация
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Ошибка валидации',
           details: errors.array(),
         });
+        return;
       }
       
       const stationData: CreateStationDTO = req.body;
@@ -132,27 +136,30 @@ router.put(
     try {
       // Проверка прав доступа
       if (req.user?.role !== 'admin') {
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           error: 'Доступ запрещен. Требуются права администратора.',
         });
+        return;
       }
       
       const id = parseInt(req.params.id, 10);
       
       if (isNaN(id)) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Неверный ID станции',
         });
+        return;
       }
       
       const station = findById('stations', id);
       if (!station) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           error: 'Станция не найдена',
         });
+        return;
       }
       
       const updateData: UpdateStationDTO = req.body;
@@ -169,7 +176,7 @@ router.put(
       console.error('Ошибка при обновлении станции:', error);
       res.status(500).json({
         success: false,
-        error: 'Ошибка сервера при обновлении станции',
+        error: 'Ошибка серве��а при обновлении станции',
       });
     }
   }
@@ -182,37 +189,41 @@ router.delete('/:id', authenticateToken, async (req: Request, res: Response) => 
   try {
     // Проверка прав доступа
     if (req.user?.role !== 'admin') {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Доступ запрещен. Требуются права администратора.',
       });
+      return;
     }
     
     const id = parseInt(req.params.id, 10);
     
     if (isNaN(id)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Неверный ID станции',
       });
+      return;
     }
     
     const station = findById('stations', id);
     if (!station) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Станция не найдена',
       });
+      return;
     }
     
     // Удаляем станцию
     const deleted = remove('stations', id);
     
     if (!deleted) {
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         error: 'Ошибка при удалении станции',
       });
+      return;
     }
     
     res.json({

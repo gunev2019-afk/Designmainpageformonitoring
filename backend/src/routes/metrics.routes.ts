@@ -15,7 +15,7 @@ const router = Router();
  * Query параметры:
  * - stationId: фильтр по станции
  */
-router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { stationId } = req.query;
     
@@ -24,10 +24,11 @@ router.get('/', authenticateToken, async (req: Request, res: Response): Promise<
     if (stationId) {
       const id = parseInt(stationId as string, 10);
       if (isNaN(id)) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Неверный ID станции',
         });
+        return;
       }
       metrics = findWhere('metrics', (m: Metric) => m.station_id === id);
     } else {
@@ -55,19 +56,21 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
     const id = parseInt(req.params.id, 10);
     
     if (isNaN(id)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Неверный ID метрики',
       });
+      return;
     }
     
     const metric = findById('metrics', id) as Metric | null;
     
     if (!metric) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Метрика не найдена',
       });
+      return;
     }
     
     res.json({
@@ -100,20 +103,22 @@ router.post(
     try {
       // Проверка прав доступа
       if (req.user?.role !== 'admin') {
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           error: 'Доступ запрещен. Требуются права администратора.',
         });
+        return;
       }
       
       // Валидация
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Ошибка валидации',
           details: errors.array(),
         });
+        return;
       }
       
       const metricData: CreateMetricDTO = req.body;
@@ -121,10 +126,11 @@ router.post(
       // Проверяем что станция существует
       const station = findById('stations', metricData.station_id);
       if (!station) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Станция не найдена',
         });
+        return;
       }
       
       // Создаем метрику
@@ -165,27 +171,30 @@ router.put(
     try {
       // Проверка прав доступа
       if (req.user?.role !== 'admin') {
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           error: 'Доступ запрещен. Требуются права администратора.',
         });
+        return;
       }
       
       const id = parseInt(req.params.id, 10);
       
       if (isNaN(id)) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Неверный ID метрики',
         });
+        return;
       }
       
       const metric = findById('metrics', id);
       if (!metric) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           error: 'Метрика не найдена',
         });
+        return;
       }
       
       const updateData: UpdateMetricDTO = req.body;
@@ -194,10 +203,11 @@ router.put(
       if (updateData.station_id) {
         const station = findById('stations', updateData.station_id);
         if (!station) {
-          return res.status(400).json({
+          res.status(400).json({
             success: false,
             error: 'Станция не найдена',
           });
+          return;
         }
       }
       
@@ -226,37 +236,41 @@ router.delete('/:id', authenticateToken, async (req: Request, res: Response) => 
   try {
     // Проверка прав доступа
     if (req.user?.role !== 'admin') {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Доступ запрещен. Требуются права администратора.',
       });
+      return;
     }
     
     const id = parseInt(req.params.id, 10);
     
     if (isNaN(id)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Неверный ID метрики',
       });
+      return;
     }
     
     const metric = findById('metrics', id);
     if (!metric) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Метрика не найдена',
       });
+      return;
     }
     
     // Удаляем метрику
     const deleted = remove('metrics', id);
     
     if (!deleted) {
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         error: 'Ошибка при удалении метрики',
       });
+      return;
     }
     
     res.json({

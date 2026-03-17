@@ -13,31 +13,34 @@ const router = Router();
 /**
  * GET /api/data/current/:stationId - Получить текущие значения метрик
  */
-router.get('/current/:stationId', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+router.get('/current/:stationId', authenticateToken, async (req: Request, res: Response) => {
   try {
     const stationId = parseInt(req.params.stationId, 10);
     
     if (isNaN(stationId)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Неверный ID станции',
       });
+      return;
     }
     
     // Получаем станцию
     const station = findById('stations', stationId) as Station | null;
     if (!station) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Станция не найдена',
       });
+      return;
     }
     
     if (!station.is_active) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Станция неактивна',
       });
+      return;
     }
     
     // Получаем активные метрики для этой станции
@@ -46,11 +49,12 @@ router.get('/current/:stationId', authenticateToken, async (req: Request, res: R
     );
     
     if (metrics.length === 0) {
-      return res.json({
+      res.json({
         success: true,
         data: {},
         message: 'Нет активных метрик для этой станции',
       });
+      return;
     }
     
     // Формируем список field/channel для запроса
@@ -107,26 +111,29 @@ router.post('/history', authenticateToken, async (req: Request, res: Response) =
     
     // Валидация
     if (!stationId || !metricIds || !Array.isArray(metricIds) || metricIds.length === 0) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Неверные параметры запроса',
       });
+      return;
     }
     
     if (!timeRange || !frequency) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Необходимо указать timeRange и frequency',
       });
+      return;
     }
     
     // Получаем станцию
     const station = findById('stations', stationId) as Station | null;
     if (!station) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Станция не найдена',
       });
+      return;
     }
     
     // Получаем метрики
@@ -135,10 +142,11 @@ router.post('/history', authenticateToken, async (req: Request, res: Response) =
       .filter(m => m !== null && m.station_id === stationId && m.is_active) as Metric[];
     
     if (metrics.length === 0) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Не найдены активные метрики для запроса',
       });
+      return;
     }
     
     // Запрашиваем данные для каждой метрики
@@ -204,7 +212,7 @@ router.post('/history', authenticateToken, async (req: Request, res: Response) =
     console.error('Ошибка при получении исторических данных:', error);
     res.status(500).json({
       success: false,
-      error: 'Ошибка ��ервера при получении данных',
+      error: 'Ошибка сервера при получении данных',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
