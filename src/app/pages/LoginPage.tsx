@@ -29,15 +29,17 @@ export function LoginPage() {
     setError('');
     setIsLoading(true);
 
-    // Имитация задержки сети
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const success = login(username, password);
-    
-    if (success) {
-      navigate('/');
-    } else {
-      setError('Неверное имя пользователя или пароль');
+    try {
+      const result = await login(username, password);
+      
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.error || 'Неверное имя пользователя или пароль');
+      }
+    } catch (error) {
+      setError('Ошибка подключения к серверу');
+    } finally {
       setIsLoading(false);
     }
   };

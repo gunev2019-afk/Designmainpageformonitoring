@@ -1,155 +1,218 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import * as api from '../utils/api';
 
 export type UserRole = 'admin' | 'user';
 
 export interface User {
+  id: number;
   username: string;
-  password: string;
   role: UserRole;
-  createdAt: string;
+  created_at: string;
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
+  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   username: string | null;
   userRole: UserRole | null;
+  userId: number | null;
   users: User[];
-  createUser: (username: string, password: string, role: UserRole) => { success: boolean; message: string };
-  deleteUser: (username: string) => boolean;
-  updateUser: (username: string, newPassword: string) => boolean;
+  loadUsers: () => Promise<void>;
+  createUser: (username: string, password: string, role: UserRole) => Promise<{ success: boolean; message: string }>;
+  deleteUser: (userId: number) => Promise<boolean>;
+  updateUser: (userId: number, newPassword: string) => Promise<boolean>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Инициализация пользователей с дефолтным администратором
-const initializeUsers = (): User[] => {
-  const savedUsers = localStorage.getItem('users');
-  if (savedUsers) {
-    return JSON.parse(savedUsers);
-  }
-  
-  // Создаем дефолтного администратора
-  const defaultUsers: User[] = [
-    {
-      username: 'admin',
-      password: 'admin',
-      role: 'admin',
-      createdAt: new Date().toISOString()
-    }
-  ];
-  
-  localStorage.setItem('users', JSON.stringify(defaultUsers));
-  return defaultUsers;
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [users, setUsers] = useState<User[]>(initializeUsers);
-  
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    // Проверяем сохраненную сессию в localStorage
-    const saved = localStorage.getItem('isAuthenticated');
-    return saved === 'true';
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [username, setUsername] = useState<string | null>(() => {
-    return localStorage.getItem('username');
-  });
-
-  const [userRole, setUserRole] = useState<UserRole | null>(() => {
-    return localStorage.getItem('userRole') as UserRole | null;
-  });
-
-  // Синхронизация пользователей с localStorage
+  // Проверка токена при загрузке
   useEffect(() => {
-    localStorage.setItem('users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    // Сохраняем состояние авторизации в localStorage
-    localStorage.setItem('isAuthenticated', isAuthenticated.toString());
-    if (username) {
-      localStorage.setItem('username', username);
-    } else {
-      localStorage.removeItem('username');
-    }
-    if (userRole) {
-      localStorage.setItem('userRole', userRole);
-    } else {
-      localStorage.removeItem('userRole');
-    }
-  }, [isAuthenticated, username, userRole]);
-
-  const login = (inputUsername: string, inputPassword: string): boolean => {
-    const user = users.find(u => u.username === inputUsername && u.password === inputPassword);
-    
-    if (user) {
-      setIsAuthenticated(true);
-      setUsername(user.username);
-      setUserRole(user.role);
-      return true;
-    }
-    return false;
-  };
-
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUsername(null);
-    setUserRole(null);
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('username');
-    localStorage.removeItem('userRole');
-  };
-
-  const createUser = (username: string, password: string, role: UserRole): { success: boolean; message: string } => {
-    // Проверка на существующего пользователя
-    if (users.find(u => u.username === username)) {
-      return { success: false, message: 'Пользователь с таким именем уже существует' };
-    }
-
-    // Валидация
-    if (username.length < 3) {
-      return { success: false, message: 'Имя пользователя должно быть не менее 3 символов' };
-    }
-
-    if (password.length < 4) {
-      return { success: false, message: 'Пароль должен быть не менее 4 символов' };
-    }
-
-    const newUser: User = {
-      username,
-      password,
-      role,
-      createdAt: new Date().toISOString()
+    const initAuth = async () => {
+      const token = api.getToken();
+      
+      if (token) {
+        try {
+          // Проверяем валидность токена
+          const response = await api.getCurrentUser();
+          
+          if (response.success && response.data?.user) {
+            const user = response.data.user;
+            setIsAuthenticated(true);
+            setUsername(user.username);
+            setUserRole(user.role);
+            setUserId(user.id);
+          } else {
+            // Токен невалидный
+            api.removeToken();
+          }
+        } catch (error) {
+          // Ошибка проверки токена
+          api.removeToken();
+        }
+      }
+      
+      setIsLoading(false);
     };
 
-    setUsers(prev => [...prev, newUser]);
-    return { success: true, message: 'Пользователь успешно создан' };
+    initAuth();
+  }, []);
+
+  /**
+   * Авторизация
+   */
+  const login = async (inputUsername: string, inputPassword: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await api.login(inputUsername, inputPassword);
+      
+      if (response.success && response.data) {
+        const { user } = response.data;
+        setIsAuthenticated(true);
+        setUsername(user.username);
+        setUserRole(user.role);
+        setUserId(user.id);
+        return { success: true };
+      }
+      
+      return { success: false, error: 'Ошибка авторизации' };
+    } catch (error) {
+      if (error instanceof api.ApiError) {
+        return { success: false, error: error.message };
+      }
+      return { success: false, error: 'Ошибка подключения к серверу' };
+    }
   };
 
-  const deleteUser = (username: string): boolean => {
-    // Защита от удаления последнего админа
-    const admins = users.filter(u => u.role === 'admin');
-    const userToDelete = users.find(u => u.username === username);
-    
-    if (userToDelete?.role === 'admin' && admins.length === 1) {
-      return false; // Нельзя удалить последнего админа
+  /**
+   * Выход
+   */
+  const logout = async (): Promise<void> => {
+    try {
+      await api.logout();
+    } catch (error) {
+      // Игнорируем ошибки при выходе
+    } finally {
+      setIsAuthenticated(false);
+      setUsername(null);
+      setUserRole(null);
+      setUserId(null);
+      setUsers([]);
+    }
+  };
+
+  /**
+   * Загрузка списка пользователей (только для админов)
+   */
+  const loadUsers = async (): Promise<void> => {
+    if (userRole !== 'admin') {
+      return;
     }
 
-    setUsers(prev => prev.filter(u => u.username !== username));
-    return true;
+    try {
+      const response = await api.getUsers();
+      
+      if (response.success && response.data?.users) {
+        setUsers(response.data.users);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки пользователей:', error);
+    }
   };
 
-  const updateUser = (username: string, newPassword: string): boolean => {
-    if (newPassword.length < 4) {
+  /**
+   * Создать пользователя
+   */
+  const createUser = async (
+    username: string,
+    password: string,
+    role: UserRole
+  ): Promise<{ success: boolean; message: string }> => {
+    if (userRole !== 'admin') {
+      return { success: false, message: 'Недостаточно прав' };
+    }
+
+    try {
+      const response = await api.createUser(username, password, role);
+      
+      if (response.success) {
+        // Перезагружаем список пользователей
+        await loadUsers();
+        return { success: true, message: 'Пользователь успешно создан' };
+      }
+      
+      return { success: false, message: response.error || 'Ошибка создания пользователя' };
+    } catch (error) {
+      if (error instanceof api.ApiError) {
+        return { success: false, message: error.message };
+      }
+      return { success: false, message: 'Ошибка подключения к серверу' };
+    }
+  };
+
+  /**
+   * Удалить пользователя
+   */
+  const deleteUser = async (targetUserId: number): Promise<boolean> => {
+    if (userRole !== 'admin') {
       return false;
     }
 
-    setUsers(prev => prev.map(u => 
-      u.username === username ? { ...u, password: newPassword } : u
-    ));
-    return true;
+    // Нельзя удалить самого себя
+    if (targetUserId === userId) {
+      return false;
+    }
+
+    try {
+      const response = await api.deleteUser(targetUserId);
+      
+      if (response.success) {
+        // Перезагружаем список пользователей
+        await loadUsers();
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Ошибка удаления пользователя:', error);
+      return false;
+    }
+  };
+
+  /**
+   * Обновить пользователя
+   */
+  const updateUser = async (targetUserId: number, newPassword: string): Promise<boolean> => {
+    if (userRole !== 'admin') {
+      return false;
+    }
+
+    if (newPassword.length < 6) {
+      return false;
+    }
+
+    try {
+      const response = await api.updateUser(targetUserId, { password: newPassword });
+      
+      if (response.success) {
+        // Перезагружаем список пользователей
+        await loadUsers();
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Ошибка обновления пользователя:', error);
+      return false;
+    }
   };
 
   return (
@@ -159,10 +222,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout, 
       username, 
       userRole,
+      userId,
       users,
+      loadUsers,
       createUser,
       deleteUser,
-      updateUser
+      updateUser,
+      isLoading
     }}>
       {children}
     </AuthContext.Provider>

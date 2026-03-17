@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth, User, UserRole } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -28,17 +28,24 @@ import {
  */
 
 export function UsersPage() {
-  const { users, createUser, deleteUser, username: currentUsername } = useAuth();
+  const { users, createUser, deleteUser, loadUsers, username: currentUsername } = useAuth();
   
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<UserRole>('user');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  // Загрузка пользователей при монтировании
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    const result = createUser(newUsername, newPassword, newRole);
+    const result = await createUser(newUsername, newPassword, newRole);
     
     setMessage({
       type: result.success ? 'success' : 'error',
@@ -53,9 +60,11 @@ export function UsersPage() {
       // Скрыть сообщение через 3 секунды
       setTimeout(() => setMessage(null), 3000);
     }
+    
+    setIsLoading(false);
   };
 
-  const handleDeleteUser = (username: string) => {
+  const handleDeleteUser = async (userId: number, username: string) => {
     if (username === currentUsername) {
       setMessage({
         type: 'error',
@@ -66,7 +75,7 @@ export function UsersPage() {
     }
 
     if (window.confirm(`Вы уверены, что хотите удалить пользователя "${username}"?`)) {
-      const success = deleteUser(username);
+      const success = await deleteUser(userId);
       
       if (success) {
         setMessage({
@@ -76,7 +85,7 @@ export function UsersPage() {
       } else {
         setMessage({
           type: 'error',
-          text: 'Невозможно удалить последнего администратора'
+          text: 'Ошибка при удалении пользователя'
         });
       }
       
@@ -207,6 +216,7 @@ export function UsersPage() {
               <Button 
                 type="submit" 
                 className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white"
+                disabled={isLoading}
               >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Создать пользователя
@@ -256,7 +266,7 @@ export function UsersPage() {
                       )}
                     </div>
                     <p className="text-gray-500 dark:text-[#a1a1aa]">
-                      {user.role === 'admin' ? 'Администратор' : 'Пользователь'} • {formatDate(user.createdAt)}
+                      {user.role === 'admin' ? 'Администратор' : 'Пользователь'} • {formatDate(user.created_at)}
                     </p>
                   </div>
 
@@ -264,7 +274,7 @@ export function UsersPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDeleteUser(user.username)}
+                    onClick={() => handleDeleteUser(user.id, user.username)}
                     className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 flex-shrink-0"
                     disabled={user.username === currentUsername}
                   >
