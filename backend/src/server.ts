@@ -5,7 +5,7 @@
 
 import { createApp } from './app';
 import { config, validateConfig } from './config/env';
-import { initDatabase, seedDatabase, closeDatabase, getDatabase } from './config/database';
+import { initDatabase, seedDatabase, closeDatabase } from './config/database';
 
 /**
  * Запуск сервера
