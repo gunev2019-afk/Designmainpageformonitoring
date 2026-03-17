@@ -56,7 +56,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // Генерируем JWT токен
     const signOptions: SignOptions = {
-      expiresIn: config.jwt.expiresIn as string,
+      expiresIn: config.jwt.expiresIn,
     };
     
     const token = jwt.sign(
@@ -65,7 +65,7 @@ router.post('/login', async (req: Request, res: Response) => {
         username: user.username,
         role: user.role,
       },
-      config.jwt.secret as string,
+      config.jwt.secret,
       signOptions
     );
 
@@ -197,7 +197,7 @@ router.get('/me', authenticateToken, (req: Request, res: Response) => {
 
 /**
  * POST /api/auth/logout
- * Выход (на клиенте просто уалить токен)
+ * Вы��од (на клиенте просто уалить токен)
  */
 router.post('/logout', authenticateToken, (req: Request, res: Response) => {
   // JWT tokens are stateless, so we just return success

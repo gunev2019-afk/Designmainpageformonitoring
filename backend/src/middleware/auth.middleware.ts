@@ -42,7 +42,7 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
     }
 
     // Проверяем токен
-    jwt.verify(token, config.jwt.secret as string, (err, decoded) => {
+    jwt.verify(token, config.jwt.secret, (err, decoded) => {
       if (err) {
         res.status(403).json({
           success: false,
@@ -148,7 +148,7 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction): v
       return;
     }
 
-    jwt.verify(token, config.jwt.secret as string, (err, decoded) => {
+    jwt.verify(token, config.jwt.secret, (err, decoded) => {
       if (!err) {
         const payload = decoded as { id: number; username: string; role: 'admin' | 'user' };
         const user = findById('users', payload.id);
