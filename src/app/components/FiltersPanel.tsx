@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { MapPin, Clock, Settings, Database, TrendingUp, TrendingDown } from 'lucide-react';
+import { TimeRange, DataFrequency } from '../utils/api';
 
 interface FiltersPanelProps {
+  stations: string[];
   selectedStation: string;
   onStationChange: (station: string) => void;
-  timeInterval: string;
-  onTimeIntervalChange: (interval: string) => void;
-  dataFrequency: string;
-  onDataFrequencyChange: (frequency: string) => void;
+  timeInterval: TimeRange;
+  onTimeIntervalChange: (interval: TimeRange) => void;
+  dataFrequency: DataFrequency;
+  onDataFrequencyChange: (frequency: DataFrequency) => void;
+  availableMetrics: string[];
   visibleMetrics: string[];
   onMetricsChange: (metrics: string[]) => void;
   showMin: boolean;
@@ -18,12 +21,14 @@ interface FiltersPanelProps {
 }
 
 export function FiltersPanel({
+  stations,
   selectedStation,
   onStationChange,
   timeInterval,
   onTimeIntervalChange,
   dataFrequency,
   onDataFrequencyChange,
+  availableMetrics,
   visibleMetrics,
   onMetricsChange,
   showMin,
@@ -32,45 +37,35 @@ export function FiltersPanel({
   onShowMaxChange,
   onApplyFilters
 }: FiltersPanelProps) {
-  const [showCustomInterval, setShowCustomInterval] = useState(false);
-
-  const stations = [
-    'LOGO Тверская',
-    'LOGO Арбат',
-    'LOGO Нагатинская набережная'
+  const timeIntervals: { value: TimeRange; label: string }[] = [
+    { value: '1h', label: '1 час' },
+    { value: '6h', label: '6 часов' },
+    { value: '1d', label: '1 день' },
+    { value: '1w', label: '1 неделя' },
+    { value: '1m', label: '1 месяц' },
   ];
 
-  const timeIntervals = [
-    '5 минут',
-    '15 минут',
-    '30 минут',
-    '1 час',
-    '6 часов',
-    '24 часа',
-    '7 дней'
+  const frequencies: { value: DataFrequency; label: string }[] = [
+    { value: '1s', label: '1 сек' },
+    { value: '10s', label: '10 сек' },
+    { value: '1m', label: '1 мин' },
+    { value: '5m', label: '5 мин' },
+    { value: '15m', label: '15 мин' },
+    { value: '1h', label: '1 час' },
   ];
 
-  // Частоты зависят от выбранного интервала
+  // Фильтруем частоты в зависимости от выбранного интервала
   const getAvailableFrequencies = () => {
-    const allFrequencies = ['1 сек', '10 сек', '1 мин', '5 мин', '1 час'];
-    if (timeInterval === '24 часа' || timeInterval === '7 дней') {
-      return allFrequencies.slice(2);
+    if (timeInterval === '1w' || timeInterval === '1m') {
+      return frequencies.filter(f => ['5m', '15m', '1h'].includes(f.value));
     }
-    if (timeInterval === '6 часов') {
-      return allFrequencies.slice(1);
+    if (timeInterval === '1d') {
+      return frequencies.filter(f => ['1m', '5m', '15m', '1h'].includes(f.value));
     }
-    return allFrequencies;
+    return frequencies;
   };
 
   const availableFrequencies = getAvailableFrequencies();
-
-  // Метрики с включенной влажностью
-  const availableMetrics = [
-    'Температура слой 1',
-    'Температура слой 2',
-    'Температура слой 3',
-    'Влажность'
-  ];
 
   const handleMetricToggle = (metric: string) => {
     if (visibleMetrics.includes(metric)) {
@@ -81,19 +76,23 @@ export function FiltersPanel({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 space-y-6 transition-colors duration-300">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Фильтры</h2>
+    <div className="bg-white dark:bg-[#27272a] rounded-xl shadow-md p-6 space-y-6 border border-gray-100 dark:border-[#3f3f46] transition-colors duration-300">
+      {/* Заголовок */}
+      <div className="flex items-center gap-2 pb-4 border-b border-gray-200 dark:border-[#3f3f46]">
+        <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Фильтры</h2>
+      </div>
 
-      {/* Блок: Станция */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h3 className="font-medium text-gray-900 dark:text-white">Станция</h3>
-        </div>
+      {/* Выбор станции */}
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-[#fafafa]">
+          <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          Станция
+        </label>
         <select
           value={selectedStation}
           onChange={(e) => onStationChange(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#18181b] border border-gray-200 dark:border-[#3f3f46] rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
         >
           {stations.map((station) => (
             <option key={station} value={station}>
@@ -101,154 +100,114 @@ export function FiltersPanel({
             </option>
           ))}
         </select>
-        <p className="text-xs text-gray-600 dark:text-gray-300">
-          Выбор станции влияет на доступные метрики
-        </p>
       </div>
 
-      {/* Блок: Временной интервал */}
-      <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h3 className="font-medium text-gray-900 dark:text-white">Временной интервал</h3>
-        </div>
+      {/* Временной интервал */}
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-[#fafafa]">
+          <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          Временной интервал
+        </label>
         <select
           value={timeInterval}
-          onChange={(e) => onTimeIntervalChange(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          onChange={(e) => onTimeIntervalChange(e.target.value as TimeRange)}
+          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#18181b] border border-gray-200 dark:border-[#3f3f46] rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
         >
           {timeIntervals.map((interval) => (
-            <option key={interval} value={interval}>
-              {interval}
+            <option key={interval.value} value={interval.value}>
+              {interval.label}
             </option>
           ))}
         </select>
-        <button
-          onClick={() => setShowCustomInterval(!showCustomInterval)}
-          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-        >
-          {showCustomInterval ? '− Скрыть ручной интервал' : '+ Ручной интервал'}
-        </button>
-        {showCustomInterval && (
-          <div className="space-y-2 mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div>
-              <label className="text-xs text-gray-600 dark:text-gray-300 block mb-1">От:</label>
-              <input
-                type="datetime-local"
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-600 dark:text-gray-300 block mb-1">До:</label>
-              <input
-                type="datetime-local"
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Блок: Частота точек данных */}
-      <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-2">
-          <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h3 className="font-medium text-gray-900 dark:text-white">Частота точек данных</h3>
-        </div>
+      {/* Частота данных */}
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-[#fafafa]">
+          <Database className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          Частота данных
+        </label>
         <select
           value={dataFrequency}
-          onChange={(e) => onDataFrequencyChange(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          onChange={(e) => onDataFrequencyChange(e.target.value as DataFrequency)}
+          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#18181b] border border-gray-200 dark:border-[#3f3f46] rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
         >
           {availableFrequencies.map((freq) => (
-            <option key={freq} value={freq}>
-              {freq}
+            <option key={freq.value} value={freq.value}>
+              {freq.label}
             </option>
           ))}
         </select>
-        <p className="text-xs text-gray-600 dark:text-gray-300">
-          Доступные частоты зависят от выбранного интервала времени
-        </p>
       </div>
 
-      {/* Блок: Отображаемые данные */}
-      <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-2">
-          <Database className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h3 className="font-medium text-gray-900 dark:text-white">Отображаемые данные</h3>
-        </div>
-        <div className="space-y-2">
+      {/* Выбор метрик */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-gray-700 dark:text-[#fafafa]">
+          Отображаемые метрики
+        </label>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
           {availableMetrics.map((metric) => (
             <label
               key={metric}
-              className="flex items-center gap-3 p-3 bg-gray-50/50 hover:bg-gray-100 border border-transparent dark:bg-gray-700/50 dark:hover:bg-gray-600 rounded-lg cursor-pointer transition-all"
+              className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-[#18181b] rounded-lg hover:bg-gray-100 dark:hover:bg-[#3f3f46] cursor-pointer transition-colors duration-200"
             >
               <input
                 type="checkbox"
                 checked={visibleMetrics.includes(metric)}
                 onChange={() => handleMetricToggle(metric)}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-200">{metric}</span>
+              <span className="text-sm text-gray-900 dark:text-white flex-1">
+                {metric}
+              </span>
             </label>
           ))}
-        </div>
-        <p className="text-xs text-gray-600 dark:text-gray-300">
-          Выбор влияет на график и таблицу. Влажность отображается на отдельном графике.
-        </p>
-      </div>
-
-      {/* Блок: Дополнительные параметры */}
-      <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h3 className="font-medium text-gray-900 dark:text-white">Дополнительные параметры</h3>
-        </div>
-        
-        <div className="space-y-2">
-          {/* Минимум */}
-          <label className="flex items-center gap-3 p-3 bg-gray-50/50 hover:bg-gray-100 border border-transparent dark:bg-gray-700/50 dark:hover:bg-gray-600 rounded-lg cursor-pointer transition-all">
-            <input
-              type="checkbox"
-              checked={showMin}
-              onChange={(e) => onShowMinChange(e.target.checked)}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <div className="flex items-center gap-2">
-              <TrendingDown className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-              <span className="text-sm text-gray-700 dark:text-gray-200">Минимум</span>
+          {availableMetrics.length === 0 && (
+            <div className="text-sm text-gray-500 dark:text-[#71717a] text-center py-4">
+              Нет доступных метрик
             </div>
-          </label>
-
-          {/* Максимум */}
-          <label className="flex items-center gap-3 p-3 bg-gray-50/50 hover:bg-gray-100 border border-transparent dark:bg-gray-700/50 dark:hover:bg-gray-600 rounded-lg cursor-pointer transition-all">
-            <input
-              type="checkbox"
-              checked={showMax}
-              onChange={(e) => onShowMaxChange(e.target.checked)}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-              <span className="text-sm text-gray-700 dark:text-gray-200">Максимум</span>
-            </div>
-          </label>
+          )}
         </div>
-
-        <p className="text-xs text-gray-600 dark:text-gray-300">
-          Добавляет столбцы мин/макс для каждого параметра
-        </p>
       </div>
 
-      {/* Кнопка применить фильтры */}
-      <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-        <button
-          onClick={onApplyFilters}
-          className="w-full px-6 py-3 bg-blue-600 dark:bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 active:bg-blue-800 dark:active:bg-blue-700 transition-all shadow-md hover:shadow-lg"
-        >
-          Применить фильтры
-        </button>
+      {/* Опции Min/Max */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-gray-700 dark:text-[#fafafa]">
+          Дополнительные параметры
+        </label>
+        <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-[#18181b] rounded-lg hover:bg-gray-100 dark:hover:bg-[#3f3f46] cursor-pointer transition-colors duration-200">
+          <input
+            type="checkbox"
+            checked={showMin}
+            onChange={(e) => onShowMinChange(e.target.checked)}
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+          />
+          <TrendingDown className="w-4 h-4 text-gray-600 dark:text-[#a1a1aa]" />
+          <span className="text-sm text-gray-900 dark:text-white flex-1">
+            Показать минимум
+          </span>
+        </label>
+        <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-[#18181b] rounded-lg hover:bg-gray-100 dark:hover:bg-[#3f3f46] cursor-pointer transition-colors duration-200">
+          <input
+            type="checkbox"
+            checked={showMax}
+            onChange={(e) => onShowMaxChange(e.target.checked)}
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+          />
+          <TrendingUp className="w-4 h-4 text-gray-600 dark:text-[#a1a1aa]" />
+          <span className="text-sm text-gray-900 dark:text-white flex-1">
+            Показать максимум
+          </span>
+        </label>
       </div>
+
+      {/* Кнопка применить */}
+      <button
+        onClick={onApplyFilters}
+        className="w-full px-4 py-3 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+      >
+        Применить фильтры
+      </button>
     </div>
   );
 }

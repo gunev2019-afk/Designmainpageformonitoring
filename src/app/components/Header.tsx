@@ -16,9 +16,9 @@ export function Header() {
     { path: '/logs', label: 'Логи' }
   ];
 
-  // Добавляем вкладки "Метрики" и "Пользователи" только для администраторов
+  // Добавляем вкладки для администраторов
   const navItems = userRole === 'admin' 
-    ? [...baseNavItems, { path: '/metrics', label: 'Метрики' }, { path: '/users', label: 'Пользователи' }]
+    ? [...baseNavItems, { path: '/stations', label: 'Станции' }, { path: '/users', label: 'Пользователи' }]
     : baseNavItems;
 
   const handleLogout = () => {

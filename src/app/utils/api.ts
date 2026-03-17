@@ -42,6 +42,68 @@ export interface UsersListResponse {
 }
 
 /**
+ * Типы для станций и метрик
+ */
+export interface Station {
+  id: number;
+  display_name: string;
+  bucket: string;
+  measurement: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Metric {
+  id: number;
+  station_id: number;
+  display_name: string;
+  field: string;
+  channel: string;
+  unit: string;
+  show_in_chart: boolean;
+  show_in_table: boolean;
+  show_in_export: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TimeRange = '1h' | '6h' | '1d' | '1w' | '1m';
+export type DataFrequency = '1s' | '10s' | '1m' | '5m' | '15m' | '1h';
+
+export interface DataPoint {
+  time: string;
+  metrics: {
+    [metricId: number]: {
+      value: number;
+      min?: number;
+      max?: number;
+    };
+  };
+}
+
+export interface HistoryDataRequest {
+  stationId: number;
+  metricIds: number[];
+  timeRange: TimeRange;
+  frequency: DataFrequency;
+}
+
+export interface HistoryDataResponse {
+  success: boolean;
+  data: DataPoint[];
+  metadata?: {
+    stationId: number;
+    stationName: string;
+    metricNames: { [key: number]: string };
+    timeRange: TimeRange;
+    frequency: DataFrequency;
+    totalPoints: number;
+  };
+}
+
+/**
  * API Error класс
  */
 export class ApiError extends Error {
@@ -228,6 +290,165 @@ export async function deleteUser(id: number): Promise<ApiResponse> {
   return fetchApi(`/api/users/${id}`, {
     method: 'DELETE',
   });
+}
+
+/**
+ * ========================================
+ * СТАНЦИИ
+ * ========================================
+ */
+
+/**
+ * Получить список всех станций
+ */
+export async function getStations(): Promise<ApiResponse<Station[]>> {
+  return fetchApi('/api/stations');
+}
+
+/**
+ * Получить станцию по ID
+ */
+export async function getStationById(id: number): Promise<ApiResponse<Station>> {
+  return fetchApi(`/api/stations/${id}`);
+}
+
+/**
+ * Создать новую станцию (только admin)
+ */
+export async function createStation(data: {
+  display_name: string;
+  bucket: string;
+  measurement: string;
+  is_active?: boolean;
+}): Promise<ApiResponse<Station>> {
+  return fetchApi('/api/stations', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Обновить станцию (только admin)
+ */
+export async function updateStation(
+  id: number,
+  data: {
+    display_name?: string;
+    bucket?: string;
+    measurement?: string;
+    is_active?: boolean;
+  }
+): Promise<ApiResponse<Station>> {
+  return fetchApi(`/api/stations/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Удалить станцию (только admin)
+ */
+export async function deleteStation(id: number): Promise<ApiResponse> {
+  return fetchApi(`/api/stations/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * ========================================
+ * МЕТРИКИ
+ * ========================================
+ */
+
+/**
+ * Получить список всех метрик или по станции
+ */
+export async function getMetrics(stationId?: number): Promise<ApiResponse<Metric[]>> {
+  const query = stationId ? `?stationId=${stationId}` : '';
+  return fetchApi(`/api/metrics${query}`);
+}
+
+/**
+ * Получить метрику по ID
+ */
+export async function getMetricById(id: number): Promise<ApiResponse<Metric>> {
+  return fetchApi(`/api/metrics/${id}`);
+}
+
+/**
+ * Создать новую метрику (только admin)
+ */
+export async function createMetric(data: {
+  station_id: number;
+  display_name: string;
+  field: string;
+  channel: string;
+  unit: string;
+  show_in_chart?: boolean;
+  show_in_table?: boolean;
+  show_in_export?: boolean;
+  is_active?: boolean;
+}): Promise<ApiResponse<Metric>> {
+  return fetchApi('/api/metrics', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Обновить метрику (только admin)
+ */
+export async function updateMetric(
+  id: number,
+  data: Partial<Omit<Metric, 'id' | 'created_at' | 'updated_at'>>
+): Promise<ApiResponse<Metric>> {
+  return fetchApi(`/api/metrics/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Удалить метрику (только admin)
+ */
+export async function deleteMetric(id: number): Promise<ApiResponse> {
+  return fetchApi(`/api/metrics/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * ========================================
+ * ДАННЫЕ ИЗ INFLUXDB
+ * ========================================
+ */
+
+/**
+ * Получить текущие значения метрик для станции
+ */
+export async function getCurrentValues(stationId: number): Promise<ApiResponse<{
+  [metricId: number]: number | null;
+}>> {
+  return fetchApi(`/api/data/current/${stationId}`);
+}
+
+/**
+ * Получить исторические данные
+ */
+export async function getHistoryData(
+  request: HistoryDataRequest
+): Promise<HistoryDataResponse> {
+  return fetchApi('/api/data/history', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+/**
+ * Проверить подключение к InfluxDB
+ */
+export async function checkInfluxHealth(): Promise<ApiResponse> {
+  return fetchApi('/api/data/health');
 }
 
 /**

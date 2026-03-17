@@ -5,12 +5,14 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminRoute } from './components/AdminRoute';
 import { Header } from './components/Header';
+import { Toaster } from './components/ui/sonner';
 import { LoginPage } from './pages/LoginPage';
 import { HomePage } from './pages/HomePage';
 import { ExportPage } from './pages/ExportPage';
 import { LogsPage } from './pages/LogsPage';
 import { UsersPage } from './pages/UsersPage';
 import { MetricsPage } from './pages/MetricsPage';
+import { StationsPage } from './pages/StationsPage';
 
 /**
  * ГЛАВНОЕ ПРИЛОЖЕНИЕ СИСТЕМЫ ОНЛАЙН-МОНИТОРИНГА
@@ -25,6 +27,7 @@ import { MetricsPage } from './pages/MetricsPage';
  * - /logs (Логи) - Системные логи и события
  * - /users (Пользователи) - Управление пользователями (только для администраторов)
  * - /metrics (Метрики) - Дополнительные метрики и аналитика
+ * - /stations (Станции) - Управление станциями мониторинга (только для администраторов)
  * 
  * Технологии:
  * - React + TypeScript
@@ -112,6 +115,18 @@ function AppContent() {
           }
         />
 
+        {/* Страница управления станциями мониторинга (только для администраторов) */}
+        <Route
+          path="/stations"
+          element={
+            <ProtectedRoute>
+              <AdminRoute>
+                <StationsPage />
+              </AdminRoute>
+            </ProtectedRoute>
+          }
+        />
+
         {/* Перенаправление на главную для неизвестных маршрутов */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -125,6 +140,7 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <AppContent />
+          <Toaster />
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

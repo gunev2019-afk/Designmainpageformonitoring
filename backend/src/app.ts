@@ -10,6 +10,9 @@ import { config } from './config/env';
 // Импорт роутов
 import authRoutes from './routes/auth.routes';
 import usersRoutes from './routes/users.routes';
+import stationsRoutes from './routes/stations.routes';
+import metricsRoutes from './routes/metrics.routes';
+import dataRoutes from './routes/data.routes';
 
 /**
  * Создание и настройка Express приложения
@@ -71,9 +74,9 @@ export function createApp(): Express {
   // API роуты (будут добавлены позже)
   app.use('/api/auth', authRoutes);
   app.use('/api/users', usersRoutes);
-  // app.use('/api/stations', stationRoutes);
-  // app.use('/api/metrics', metricRoutes);
-  // app.use('/api/data', dataRoutes);
+  app.use('/api/stations', stationsRoutes);
+  app.use('/api/metrics', metricsRoutes);
+  app.use('/api/data', dataRoutes);
   // app.use('/api/export', exportRoutes);
   // app.use('/api/logs', logRoutes);
 

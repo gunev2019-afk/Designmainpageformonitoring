@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { FiltersPanel } from '../components/FiltersPanel';
 import { MonitoringChart } from '../components/MonitoringChart';
 import { DataTable } from '../components/DataTable';
+import { Button } from '../components/ui/button';
+import { toast } from 'sonner';
+import {
+  Station,
+  Metric,
+  TimeRange,
+  DataFrequency,
+  getStations,
+  getMetrics,
+  getCurrentValues,
+  getHistoryData,
+} from '../utils/api';
 
 /**
  * ГЛАВНАЯ СТРАНИЦА СИСТЕМЫ ОНЛАЙН-МОНИТОРИНГА
@@ -9,81 +22,229 @@ import { DataTable } from '../components/DataTable';
  */
 
 export function HomePage() {
+  // Станции и метрики
+  const [stations, setStations] = useState<Station[]>([]);
+  const [metrics, setMetrics] = useState<Metric[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
   // Состояния фильтров
-  const [selectedStation, setSelectedStation] = useState('LOGO Тверская');
-  const [timeInterval, setTimeInterval] = useState('1 час');
-  const [dataFrequency, setDataFrequency] = useState('1 мин');
-  const [visibleMetrics, setVisibleMetrics] = useState<string[]>([
-    'Температура слой 1',
-    'Температура слой 2',
-    'Температура слой 3'
-  ]);
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [timeInterval, setTimeInterval] = useState<TimeRange>('1h');
+  const [dataFrequency, setDataFrequency] = useState<DataFrequency>('1m');
+  const [selectedMetricIds, setSelectedMetricIds] = useState<number[]>([]);
   const [showMin, setShowMin] = useState(false);
   const [showMax, setShowMax] = useState(false);
 
-  // Mock данные для демонстрации - генерируем больше записей
-  const generateMockData = () => {
-    const data = [];
-    const now = new Date();
-    // Генерируем 100 записей для демонстрации скроллинга
-    for (let i = 0; i < 100; i++) {
-      const time = new Date(now.getTime() - (99 - i) * 60000);
-      data.push({
-        time: time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        t1: 24 + Math.sin(i / 10) * 3 + Math.random() * 0.5,
-        t2: 26 + Math.cos(i / 8) * 2 + Math.random() * 0.5,
-        t3: 22 + Math.sin(i / 12) * 2.5 + Math.random() * 0.5,
-        h1: 45 + Math.sin(i / 15) * 10 + Math.random() * 2
-      });
+  // Данные
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [currentValues, setCurrentValues] = useState<{ [key: number]: number | null }>({});
+
+  // Загрузка станций и метрик при монтировании
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  // Загрузка данных при изменении фильтров
+  useEffect(() => {
+    if (selectedStation && selectedMetricIds.length > 0) {
+      loadData();
     }
-    return data;
+  }, [selectedStation, timeInterval, dataFrequency, selectedMetricIds]);
+
+  // Автообновление каждые 10 секунд
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (selectedStation && selectedMetricIds.length > 0) {
+        loadData(true);
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [selectedStation, selectedMetricIds, timeInterval, dataFrequency]);
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+
+      // Загружаем станции
+      const stationsResponse = await getStations();
+      if (stationsResponse.success && stationsResponse.data) {
+        const activeStations = stationsResponse.data.filter(s => s.is_active);
+        setStations(activeStations);
+
+        if (activeStations.length > 0) {
+          setSelectedStation(activeStations[0]);
+        }
+      }
+
+      // Загружаем метрики
+      const metricsResponse = await getMetrics();
+      if (metricsResponse.success && metricsResponse.data) {
+        const activeMetrics = metricsResponse.data.filter(m => m.is_active);
+        setMetrics(activeMetrics);
+
+        // Автоматически выбираем метрики для графика
+        const chartMetrics = activeMetrics.filter(m => m.show_in_chart).slice(0, 4);
+        setSelectedMetricIds(chartMetrics.map(m => m.id));
+      }
+    } catch (error: any) {
+      console.error('Ошибка загрузки данных:', error);
+      toast.error('Не удалось загрузить данные: ' + (error.message || 'Неизвестная ошибка'));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const [chartData, setChartData] = useState(generateMockData());
+  const loadData = async (silent = false) => {
+    if (!selectedStation) return;
+
+    try {
+      if (!silent) setRefreshing(true);
+
+      // Загружаем текущие значения
+      const currentResponse = await getCurrentValues(selectedStation.id);
+      if (currentResponse.success && currentResponse.data) {
+        setCurrentValues(currentResponse.data);
+      }
+
+      // Загружаем исторические данные
+      if (selectedMetricIds.length > 0) {
+        const historyResponse = await getHistoryData({
+          stationId: selectedStation.id,
+          metricIds: selectedMetricIds,
+          timeRange: timeInterval,
+          frequency: dataFrequency,
+        });
+
+        if (historyResponse.success && historyResponse.data) {
+          setChartData(historyResponse.data);
+        }
+      }
+    } catch (error: any) {
+      console.error('Ошибка загрузки данных:', error);
+      if (!silent) {
+        toast.error('Не удалось загрузить данные: ' + (error.message || 'Неизвестная ошибка'));
+      }
+    } finally {
+      if (!silent) setRefreshing(false);
+    }
+  };
+
+  // Обработчик изменения станции
+  const handleStationChange = (stationName: string) => {
+    const station = stations.find(s => s.display_name === stationName);
+    if (station) {
+      setSelectedStation(station);
+      
+      // Обновляем метрики для новой станции
+      const stationMetrics = metrics.filter(m => 
+        m.station_id === station.id && m.is_active && m.show_in_chart
+      );
+      setSelectedMetricIds(stationMetrics.slice(0, 4).map(m => m.id));
+    }
+  };
+
+  // Обработчик изменения видимых метрик
+  const handleMetricsChange = (metricNames: string[]) => {
+    const selectedMetrics = metrics.filter(m => metricNames.includes(m.display_name));
+    setSelectedMetricIds(selectedMetrics.map(m => m.id));
+  };
 
   // Обработчик применения фильтров
   const handleApplyFilters = () => {
-    console.log('Применены фильтры:', {
-      station: selectedStation,
-      interval: timeInterval,
-      frequency: dataFrequency,
-      metrics: visibleMetrics,
-      showMin: showMin,
-      showMax: showMax
-    });
-    
-    // TODO: Здесь должен быть запрос к backend API
-    setChartData(generateMockData());
+    loadData();
   };
-
-  // Эффект для автоматического обновления при изменении фильтров
-  useEffect(() => {
-    setChartData(generateMockData());
-  }, [selectedStation, timeInterval, dataFrequency]);
 
   // Обработчик экспорта данных
   const handleExport = () => {
-    console.log('Экспорт данных');
-    alert('Экспорт данных запущен. Файл скоро будет загружен.');
+    toast.info('Функция экспорта доступна на странице "Экспорт"');
   };
+
+  // Подготовка данных для компонентов
+  const stationNames = stations.map(s => s.display_name);
+  const availableMetrics = selectedStation
+    ? metrics.filter(m => m.station_id === selectedStation.id && m.is_active)
+    : [];
+  const visibleMetricNames = metrics
+    .filter(m => selectedMetricIds.includes(m.id))
+    .map(m => m.display_name);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-[#a1a1aa]">Загрузка данных...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (stations.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Нет активных станций мониторинга
+          </h2>
+          <p className="text-gray-600 dark:text-[#a1a1aa] mb-6">
+            Для начала работы необходимо создать станцию мониторинга и настроить метрики.
+          </p>
+          <Button onClick={() => window.location.href = '/stations'}>
+            Перейти к настройке станций
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="max-w-[1920px] mx-auto p-6">
+      {/* Заголовок с кнопкой обновления */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Мониторинг в реальном времени
+          </h1>
+          {selectedStation && (
+            <p className="text-gray-600 dark:text-[#a1a1aa] mt-1">
+              Станция: {selectedStation.display_name}
+            </p>
+          )}
+        </div>
+        <Button
+          onClick={() => loadData()}
+          disabled={refreshing}
+          variant="outline"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          Обновить
+        </Button>
+      </div>
+
       <div className="flex gap-6">
         {/* Левая колонка (70%) - График и Таблица */}
         <div className="flex-1 space-y-6" style={{ width: '70%' }}>
           {/* График */}
           <MonitoringChart
             data={chartData}
-            visibleMetrics={visibleMetrics}
+            visibleMetrics={visibleMetricNames}
+            metrics={metrics}
+            selectedMetricIds={selectedMetricIds}
           />
 
           {/* Таблица */}
           <DataTable
             data={chartData}
-            visibleMetrics={visibleMetrics}
+            visibleMetrics={visibleMetricNames}
+            metrics={metrics}
+            selectedMetricIds={selectedMetricIds}
             showMin={showMin}
             showMax={showMax}
+            currentValues={currentValues}
             onExport={handleExport}
           />
         </div>
@@ -91,14 +252,16 @@ export function HomePage() {
         {/* Правая колонка (30%) - Фильтры */}
         <aside className="flex-shrink-0" style={{ width: '30%' }}>
           <FiltersPanel
-            selectedStation={selectedStation}
-            onStationChange={setSelectedStation}
+            stations={stationNames}
+            selectedStation={selectedStation?.display_name || ''}
+            onStationChange={handleStationChange}
             timeInterval={timeInterval}
             onTimeIntervalChange={setTimeInterval}
             dataFrequency={dataFrequency}
             onDataFrequencyChange={setDataFrequency}
-            visibleMetrics={visibleMetrics}
-            onMetricsChange={setVisibleMetrics}
+            availableMetrics={availableMetrics.map(m => m.display_name)}
+            visibleMetrics={visibleMetricNames}
+            onMetricsChange={handleMetricsChange}
             showMin={showMin}
             onShowMinChange={setShowMin}
             showMax={showMax}
