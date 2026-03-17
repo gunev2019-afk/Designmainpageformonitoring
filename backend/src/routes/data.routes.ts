@@ -177,24 +177,44 @@ router.post('/history', authenticateToken, async (req: Request, res: Response) =
     // Группируем по времени
     const timeMap = new Map<string, any>();
     
+    console.log('📊 [Backend] Начало форматирования данных');
+    console.log('📊 [Backend] Количество метрик:', Object.keys(results).length);
+    
     for (const [metricId, dataPoints] of Object.entries(results)) {
+      console.log(`📊 [Backend] Метрика ${metricId}: ${dataPoints.length} точек данных`);
+      
       for (const point of dataPoints) {
         if (!timeMap.has(point.time)) {
-          timeMap.set(point.time, { time: point.time, metrics: {} });
+          timeMap.set(point.time, { 
+            timestamp: point.time,  // Используем timestamp вместо time
+          });
         }
         const timePoint = timeMap.get(point.time)!;
-        timePoint.metrics[metricId] = {
-          value: point.value,
-          min: point.min,
-          max: point.max,
-        };
+        
+        // Добавляем значение метрики как metric_X
+        timePoint[`metric_${metricId}`] = point.value;
+        
+        // Опционально добавляем min/max если нужны
+        if (point.min !== undefined) {
+          timePoint[`metric_${metricId}_min`] = point.min;
+        }
+        if (point.max !== undefined) {
+          timePoint[`metric_${metricId}_max`] = point.max;
+        }
       }
     }
     
     // Преобразуем в массив и сортируем по времени
     const data = Array.from(timeMap.values()).sort((a, b) => 
-      new Date(a.time).getTime() - new Date(b.time).getTime()
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
+    
+    console.log('📊 [Backend] Форматирование завершено');
+    console.log('📊 [Backend] Всего временных точек:', data.length);
+    if (data.length > 0) {
+      console.log('📊 [Backend] Первая запись:', JSON.stringify(data[0], null, 2));
+      console.log('📊 [Backend] Ключи первой записи:', Object.keys(data[0]));
+    }
     
     res.json({
       success: true,
