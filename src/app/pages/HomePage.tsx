@@ -105,11 +105,19 @@ export function HomePage() {
       // Загружаем текущие значения
       const currentResponse = await getCurrentValues(selectedStation.id);
       if (currentResponse.success && currentResponse.data) {
+        console.log('📊 Текущие значения:', currentResponse.data);
         setCurrentValues(currentResponse.data);
       }
 
       // Загружаем исторические данные
       if (selectedMetricIds.length > 0) {
+        console.log('📥 Запрос данных:', {
+          stationId: selectedStation.id,
+          metricIds: selectedMetricIds,
+          timeRange: timeInterval,
+          frequency: dataFrequency,
+        });
+        
         const historyResponse = await getHistoryData({
           stationId: selectedStation.id,
           metricIds: selectedMetricIds,
@@ -117,12 +125,18 @@ export function HomePage() {
           frequency: dataFrequency,
         });
 
+        console.log('📈 Получены данные:', historyResponse);
+        
         if (historyResponse.success && historyResponse.data) {
+          console.log('✅ Данных получено:', historyResponse.data.length, 'записей');
+          console.log('🔍 Первая запись:', historyResponse.data[0]);
           setChartData(historyResponse.data);
+        } else {
+          console.error('❌ Нет данных или ошибка:', historyResponse);
         }
       }
     } catch (error: any) {
-      console.error('Ошибка загрузки данных:', error);
+      console.error('❌ Ошибка загрузки данных:', error);
       if (!silent) {
         toast.error('Не удалось загрузить данные: ' + (error.message || 'Неизвестная ошибка'));
       }
@@ -169,6 +183,16 @@ export function HomePage() {
   const visibleMetricNames = metrics
     .filter(m => selectedMetricIds.includes(m.id))
     .map(m => m.display_name);
+
+  console.log('🏠 HomePage render:', {
+    stationsCount: stations.length,
+    metricsCount: metrics.length,
+    selectedStation: selectedStation?.display_name,
+    availableMetricsCount: availableMetrics.length,
+    selectedMetricIds,
+    visibleMetricNames,
+    chartDataLength: chartData.length
+  });
 
   if (loading) {
     return (

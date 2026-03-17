@@ -14,11 +14,23 @@ interface AdminRouteProps {
 }
 
 export function AdminRoute({ children }: AdminRouteProps) {
-  const { userRole } = useAuth();
+  console.log('👨‍💼 AdminRoute: Проверка прав администратора');
+  
+  let auth;
+  try {
+    auth = useAuth();
+  } catch (error) {
+    console.error('❌ AdminRoute: Ошибка при вызове useAuth:', error);
+    return <Navigate to="/" replace />;
+  }
+  
+  const { userRole } = auth;
 
   if (userRole !== 'admin') {
+    console.log('❌ AdminRoute: Доступ запрещен, роль:', userRole);
     return <Navigate to="/" replace />;
   }
 
+  console.log('✅ AdminRoute: Доступ разрешен');
   return <>{children}</>;
 }

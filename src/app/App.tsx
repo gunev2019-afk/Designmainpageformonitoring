@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminRoute } from './components/AdminRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
 import { Toaster } from './components/ui/sonner';
 import { LoginPage } from './pages/LoginPage';
@@ -38,7 +39,35 @@ import { StationsPage } from './pages/StationsPage';
  */
 
 function AppContent() {
-  const { isAuthenticated, isLoading } = useAuth();
+  console.log('🚀 AppContent: Начало рендера');
+  
+  // КРИТИЧЕСКИ ВАЖНО: useAuth должен быть вызван внутри AuthProvider
+  let auth;
+  try {
+    auth = useAuth();
+  } catch (error) {
+    console.error('❌ AppContent: Ошибка при вызове useAuth:', error);
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-[#18181b] flex items-center justify-center">
+        <div className="text-center p-6">
+          <h2 className="text-xl font-bold text-red-600 mb-4">Ошибка инициализации</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {error instanceof Error ? error.message : 'Неизвестная ошибка'}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          >
+            Перезагрузить
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  const { isAuthenticated, isLoading } = auth;
+
+  console.log('🚀 AppContent render:', { isAuthenticated, isLoading });
 
   // Показываем загрузку пока проверяем токен
   if (isLoading) {
@@ -135,15 +164,19 @@ function AppContent() {
 }
 
 function App() {
+  console.log('🚀 App: Инициализация главного компонента');
+  
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppContent />
-          <Toaster />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <AppContent />
+            <Toaster />
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -15,9 +15,32 @@ import { Lock, User, AlertCircle, Sun, Moon } from 'lucide-react';
  */
 
 export function LoginPage() {
+  console.log('🔓 LoginPage: Рендер страницы входа');
+  
   const navigate = useNavigate();
-  const { login } = useAuth();
   const { isDarkMode, setLightTheme, setDarkTheme } = useTheme();
+  
+  let auth;
+  try {
+    auth = useAuth();
+  } catch (error) {
+    console.error('❌ LoginPage: Ошибка при вызове useAuth:', error);
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-[#18181b] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Ошибка инициализации авторизации</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          >
+            Перезагрузить
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  const { login } = auth;
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

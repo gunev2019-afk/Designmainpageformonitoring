@@ -28,7 +28,29 @@ import {
  */
 
 export function UsersPage() {
-  const { users, createUser, deleteUser, loadUsers, username: currentUsername } = useAuth();
+  console.log('👥 UsersPage: Рендер страницы управления пользователями');
+  
+  let auth;
+  try {
+    auth = useAuth();
+  } catch (error) {
+    console.error('❌ UsersPage: Ошибка при вызове useAuth:', error);
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Ошибка загрузки данных пользователей</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          >
+            Перезагрузить
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  const { users, createUser, deleteUser, loadUsers, username: currentUsername } = auth;
   
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');

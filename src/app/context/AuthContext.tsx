@@ -28,6 +28,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  console.log('🔐 AuthProvider: Инициализация');
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -38,29 +40,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Проверка токена при загрузке
   useEffect(() => {
     const initAuth = async () => {
+      console.log('🔐 AuthContext: Инициализация проверки токена...');
       const token = api.getToken();
+      console.log('🔐 AuthContext: Токен в localStorage:', token ? 'ЕСТЬ' : 'НЕТ');
       
       if (token) {
         try {
           // Проверяем валидность токена
+          console.log('🔐 AuthContext: Проверяем валидность токена...');
           const response = await api.getCurrentUser();
+          console.log('🔐 AuthContext: Ответ getCurrentUser:', response);
           
           if (response.success && response.data?.user) {
             const user = response.data.user;
+            console.log('✅ AuthContext: Токен валидный, пользователь:', user.username);
             setIsAuthenticated(true);
             setUsername(user.username);
             setUserRole(user.role);
             setUserId(user.id);
           } else {
             // Токен невалидный
+            console.log('❌ AuthContext: Токен невалидный, удаляем');
             api.removeToken();
+            setIsAuthenticated(false);
           }
         } catch (error) {
           // Ошибка проверки токена
+          console.log('❌ AuthContext: Ошибка проверки токена:', error);
           api.removeToken();
+          setIsAuthenticated(false);
         }
+      } else {
+        console.log('ℹ️ AuthContext: Токена нет, пользователь не авторизован');
+        setIsAuthenticated(false);
       }
       
+      console.log('🔐 AuthContext: Завершение инициализации, isLoading = false');
       setIsLoading(false);
     };
 
@@ -238,6 +253,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    console.error('❌ useAuth вызван вне AuthProvider!');
+    console.error('Проверьте структуру компонентов в App.tsx');
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

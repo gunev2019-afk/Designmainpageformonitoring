@@ -35,6 +35,14 @@ export function MonitoringChart({ data, visibleMetrics, metrics, timeRange }: Mo
   // Группируем метрики по типу (температура/влажность)
   const visibleMetricObjects = metrics.filter(m => visibleMetrics.includes(m.display_name));
   
+  console.log('📊 MonitoringChart render:', {
+    dataLength: data.length,
+    visibleMetrics,
+    metricsCount: metrics.length,
+    visibleMetricObjects: visibleMetricObjects.length,
+    firstDataPoint: data[0]
+  });
+  
   const temperatureMetrics = visibleMetricObjects.filter(m => 
     m.unit === '°C' || m.field.toLowerCase().includes('температ') || m.field.toLowerCase().includes('temp')
   );
@@ -42,6 +50,9 @@ export function MonitoringChart({ data, visibleMetrics, metrics, timeRange }: Mo
   const humidityMetrics = visibleMetricObjects.filter(m => 
     m.unit === '%' || m.field.toLowerCase().includes('влажн') || m.field.toLowerCase().includes('humid')
   );
+  
+  console.log('🌡️ Температурных метрик:', temperatureMetrics.length);
+  console.log('💧 Влажностных метрик:', humidityMetrics.length);
   
   // Цвета для графиков
   const colors = [

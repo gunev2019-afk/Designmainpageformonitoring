@@ -5,10 +5,22 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
 export function Header() {
+  console.log('📌 Header: Рендер заголовка');
+  
   const location = useLocation();
   const navigate = useNavigate();
   const { isDarkMode, setLightTheme, setDarkTheme } = useTheme();
-  const { logout, username, userRole } = useAuth();
+  
+  let auth;
+  try {
+    auth = useAuth();
+  } catch (error) {
+    console.error('❌ Header: Ошибка при вызове useAuth:', error);
+    // Если ошибка в Header, просто не показываем его
+    return null;
+  }
+  
+  const { logout, username, userRole } = auth;
 
   const baseNavItems = [
     { path: '/', label: 'Главная' },
