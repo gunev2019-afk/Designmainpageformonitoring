@@ -5,7 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { Secret } from 'jsonwebtoken';
 import { config } from '../config/env';
 import { findOne, insert } from '../config/database';
 import { authenticateToken } from '../middleware/auth.middleware';
@@ -61,7 +61,7 @@ router.post('/login', async (req: Request, res: Response) => {
         username: user.username,
         role: user.role,
       },
-      config.jwt.secret as string,
+      config.jwt.secret as Secret,
       {
         expiresIn: config.jwt.expiresIn as string,
       }
@@ -195,7 +195,7 @@ router.get('/me', authenticateToken, (req: Request, res: Response) => {
 
 /**
  * POST /api/auth/logout
- * Выход (на клиенте просто удалить токен)
+ * Выход (на клиенте просто у��алить токен)
  */
 router.post('/logout', authenticateToken, (req: Request, res: Response) => {
   // JWT tokens are stateless, so we just return success
