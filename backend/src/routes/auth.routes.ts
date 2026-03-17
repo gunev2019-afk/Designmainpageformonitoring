@@ -61,9 +61,9 @@ router.post('/login', async (req: Request, res: Response) => {
         username: user.username,
         role: user.role,
       },
-      config.jwt.secret,
+      config.jwt.secret as string,
       {
-        expiresIn: config.jwt.expiresIn,
+        expiresIn: config.jwt.expiresIn as string,
       }
     );
 

@@ -46,8 +46,8 @@ export const config = {
 
   // JWT
   jwt: {
-    secret: getEnvVar('JWT_SECRET'),
-    expiresIn: getEnvVar('JWT_EXPIRES_IN', '24h'),
+    secret: getEnvVar('JWT_SECRET') as string,
+    expiresIn: getEnvVar('JWT_EXPIRES_IN', '24h') as string,
   },
 
   // CORS
