@@ -40,8 +40,17 @@ async function startServer() {
       console.log('📚 API Endpoints:');
       console.log(`   GET  /              - Информация об API`);
       console.log(`   GET  /health        - Health check`);
-      console.log(`   POST /api/auth/login   - Авторизация (TODO)`);
+      console.log(`   POST /api/auth/login    - Авторизация ✅`);
+      console.log(`   GET  /api/auth/me       - Текущий пользователь ✅`);
+      console.log(`   POST /api/auth/logout   - Выход ✅`);
+      console.log(`   GET  /api/users         - Список пользователей (admin) ✅`);
+      console.log(`   POST /api/users         - Создать пользователя (admin) ✅`);
       console.log('');
+      console.log('🔑 Учетные записи:');
+      console.log('   admin / admin123 (администратор)');
+      console.log('   user / user123 (пользователь)');
+      console.log('');
+      console.log('💡 Примеры запросов: см. API_EXAMPLES.md');
       console.log('💡 Для остановки сервера нажмите Ctrl+C');
     });
 

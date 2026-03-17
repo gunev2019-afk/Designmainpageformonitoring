@@ -7,6 +7,10 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { config } from './config/env';
 
+// Импорт роутов
+import authRoutes from './routes/auth.routes';
+import usersRoutes from './routes/users.routes';
+
 /**
  * Создание и настройка Express приложения
  */
@@ -65,8 +69,8 @@ export function createApp(): Express {
   });
 
   // API роуты (будут добавлены позже)
-  // app.use('/api/auth', authRoutes);
-  // app.use('/api/users', userRoutes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/users', usersRoutes);
   // app.use('/api/stations', stationRoutes);
   // app.use('/api/metrics', metricRoutes);
   // app.use('/api/data', dataRoutes);

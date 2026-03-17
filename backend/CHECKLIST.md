@@ -8,7 +8,7 @@
 - [x] .env.example создан
 - [x] .gitignore настроен
 - [x] Конфигурация окружения (env.ts)
-- [x] Конфигурация SQLite (database.ts)
+- [x] Конфигурация JSON Database (jsondb.ts, database.ts)
 - [x] TypeScript типы (models.ts)
 - [x] Express приложение (app.ts)
 - [x] Точка входа сервера (server.ts)
@@ -18,70 +18,44 @@
 
 **Статус:** ✅ ЗАВЕРШЕН
 
+---
+
+## ЭТАП 2-3: АВТОРИЗАЦИЯ JWT ✅ ГОТОВО!
+
+- [x] JWT middleware (middleware/auth.middleware.ts)
+- [x] Role-based middleware (requireAdmin, requireRole)
+- [x] Auth routes (routes/auth.routes.ts)
+- [x] User routes (routes/users.routes.ts)
+- [x] Интеграция в app.ts
+- [x] API документация (API_EXAMPLES.md)
+
+**Статус:** ✅ ЗАВЕРШЕН
+
+**Endpoints:**
+- ✅ `POST /api/auth/login` - Авторизация
+- ✅ `GET /api/auth/me` - Текущий пользователь
+- ✅ `POST /api/auth/logout` - Выход
+- ✅ `GET /api/users` - Список пользователей (admin)
+- ✅ `GET /api/users/:id` - Пользователь по ID (admin)
+- ✅ `POST /api/users` - Создать пользователя (admin)
+- ✅ `PUT /api/users/:id` - Обновить пользователя (admin)
+- ✅ `DELETE /api/users/:id` - Удалить пользователя (admin)
+
 **Тестирование:**
 ```bash
-cd backend
-npm install
-cp .env.example .env
-# Заполнить .env
-npm run migrate
-npm run dev
-# Открыть http://localhost:3001
+# Login
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# Get users (нужен токен)
+curl http://localhost:3001/api/users \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ---
 
-## ЭТАП 2: МОДЕЛИ ДАННЫХ ⏳ СЛЕДУЮЩИЙ
-
-- [ ] User model (src/models/User.ts)
-- [ ] Station model (src/models/Station.ts)
-- [ ] Metric model (src/models/Metric.ts)
-- [ ] SystemLog model (src/models/SystemLog.ts)
-- [ ] Тесты моделей
-
-**Файлы для создания:**
-- `/backend/src/models/User.ts`
-- `/backend/src/models/Station.ts`
-- `/backend/src/models/Metric.ts`
-- `/backend/src/models/SystemLog.ts`
-
----
-
-## ЭТАП 3: АВТОРИЗАЦИЯ JWT 📋
-
-- [ ] JWT utilities (utils/jwt.ts)
-- [ ] Auth middleware (middleware/auth.ts)
-- [ ] Admin middleware (middleware/admin.ts)
-- [ ] Auth controller (controllers/authController.ts)
-- [ ] Auth routes (routes/auth.routes.ts)
-- [ ] Интеграция в app.ts
-- [ ] Тесты авторизации
-
-**Endpoints:**
-- `POST /api/auth/login`
-- `POST /api/auth/register` (admin only)
-- `GET /api/auth/me`
-
----
-
-## ЭТАП 4: CRUD ПОЛЬЗОВАТЕЛЕЙ 📋
-
-- [ ] User controller (controllers/userController.ts)
-- [ ] User routes (routes/user.routes.ts)
-- [ ] Валидация данных
-- [ ] Интеграция в app.ts
-- [ ] Тесты CRUD
-
-**Endpoints:**
-- `GET /api/users`
-- `GET /api/users/:id`
-- `POST /api/users`
-- `PUT /api/users/:id`
-- `DELETE /api/users/:id`
-
----
-
-## ЭТАП 5: CRUD СТАНЦИЙ И МЕТРИК 📋
+## ЭТАП 4: CRUD СТАНЦИЙ И МЕТРИК ⏳ СЛЕДУЮЩИЙ
 
 ### Станции:
 - [ ] Station controller (controllers/stationController.ts)
@@ -111,7 +85,7 @@ npm run dev
 
 ---
 
-## ЭТАП 6: INFLUXDB ИНТЕГРАЦИЯ 📋
+## ЭТАП 5: INFLUXDB ИНТЕГРАЦИЯ 📋
 
 - [ ] InfluxDB config (config/influxdb.ts)
 - [ ] InfluxDB service (services/influxService.ts)
@@ -134,7 +108,7 @@ npm run dev
 
 ---
 
-## ЭТАП 7: ЭКСПОРТ В EXCEL 📋
+## ЭТАП 6: ЭКСПОРТ В EXCEL 📋
 
 - [ ] Excel service (services/excelService.ts)
 - [ ] Export controller (controllers/exportController.ts)
@@ -147,7 +121,7 @@ npm run dev
 **Endpoints:**
 - `POST /api/export/excel`
 
-**Функции:**
+**Функци��:**
 - Получение данных из InfluxDB
 - Форматирование в таблицу
 - Генерация .xlsx файла
@@ -155,7 +129,7 @@ npm run dev
 
 ---
 
-## ЭТАП 8: СИСТЕМА ЛОГИРОВАНИЯ 📋
+## ЭТАП 7: СИСТЕМА ЛОГИРОВАНИЯ 📋
 
 - [ ] Winston logger (utils/logger.ts)
 - [ ] Log service (services/logService.ts)
@@ -177,7 +151,7 @@ npm run dev
 
 ---
 
-## ЭТАП 9: ИНТЕГРАЦИЯ С ФРОНТЕНДОМ 📋
+## ЭТАП 8: ИНТЕГРАЦИЯ С ФРОНТЕНДОМ 📋
 
 ### Backend:
 - [ ] CORS настройка
@@ -205,7 +179,7 @@ npm run dev
 
 ---
 
-## ЭТАП 10: ТЕСТИРОВАНИЕ И ДЕПЛОЙ 📋
+## ЭТАП 9: ТЕСТИРОВАНИЕ И ДЕПЛОЙ 📋
 
 ### Тестирование:
 - [ ] Unit тесты моделей
@@ -247,8 +221,8 @@ npm run dev
 
 ## 🎯 ПРОГРЕСС
 
-**Этапов завершено:** 1 / 10
-**Процент:** 10% ✅
+**Этапов завершено:** 3 / 10
+**Процент:** 30% ✅
 
 ---
 
@@ -257,17 +231,20 @@ npm run dev
 ### ✅ Готово:
 - Базовая структура backend
 - Конфигурация окружения
-- SQLite подключение и миграции
+- JSON Database подключение и миграции
 - TypeScript типы
 - Express сервер
+- Авторизация JWT
+- CRUD endpoints пользователей
 
 ### ⏳ В процессе:
-- Ничего (ждем старта Этапа 2)
+- Ничего (ждем старта Этапа 4)
 
 ### 📋 Следующее:
 - Создание моделей данных (User, Station, Metric, Log)
-- Авторизация JWT
-- CRUD endpoints
+- CRUD endpoints станций и метрик
+- InfluxDB интеграция
+- Базовая интеграция фронтенда
 
 ---
 
@@ -305,12 +282,12 @@ npm run dev
 
 - Все пароли хэшируются через bcrypt
 - JWT токены живут 24 часа
-- SQLite достаточно для начала (можно переключиться на PostgreSQL позже)
+- JSON Database достаточно для начала (можно переключиться на PostgreSQL позже)
 - Агрегация InfluxDB оптимизирована для больших объемов данных
 
 ---
 
-**Текущий этап:** 1 ✅
-**Следующий этап:** 2 ⏳
+**Текущий этап:** 4 ⏳
+**Следующий этап:** 5 ⏳
 
-Готовы начать Этап 2? 🚀
+Готовы начать Этап 4? 🚀
