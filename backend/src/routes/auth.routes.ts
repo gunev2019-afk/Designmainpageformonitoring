@@ -5,7 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { config } from '../config/env';
 import { findOne, insert } from '../config/database';
 import { authenticateToken } from '../middleware/auth.middleware';
@@ -55,6 +55,10 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     // Генерируем JWT токен
+    const signOptions: SignOptions = {
+      expiresIn: config.jwt.expiresIn as string,
+    };
+    
     const token = jwt.sign(
       {
         id: user.id,
@@ -62,9 +66,7 @@ router.post('/login', async (req: Request, res: Response) => {
         role: user.role,
       },
       config.jwt.secret as string,
-      {
-        expiresIn: config.jwt.expiresIn as string,
-      }
+      signOptions
     );
 
     // Возвращаем токен и информацию о пользователе
